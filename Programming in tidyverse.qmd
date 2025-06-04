@@ -1,0 +1,109 @@
+---
+title: "Programming in tidyverse"
+format: pdf
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+```
+
+## Task 1
+
+### Part a
+
+We cannot use `read_csv()` for the `data.txt` file because this data is separated by `;`, while `read_csv()` can only read in data with values that are separated by `,`. For the `data.txt` file, we can use `read_csv2()` to read in data that is separated by `;`.
+
+```{r}
+data <- read_csv2("data/data.txt", col_types = "d", skip = 0)
+data
+```
+
+### Part b
+
+```{r}
+data2 <- read_delim("data/data2.txt", delim = "6", col_types = "fdc")
+data2
+```
+
+## Task 2
+
+### Part a
+
+```{r}
+trailblazer <- read_csv("data/trailblazer.csv")
+trailblazer
+```
+
+### Part b
+
+```{r}
+trailblazer_longer <- trailblazer |>
+  pivot_longer(cols = !Player,
+               names_to = "Games_Location",
+               values_to = "Points") |>
+  separate_wider_delim(cols = Games_Location, 
+                       delim = "_",
+                       names = c("Game", "Location"),
+                       cols_remove = TRUE)
+trailblazer_longer %>% slice_head(n = 5)
+```
+
+###Part c
+
+```{r}
+trailblazer_wider <- trailblazer_longer |> 
+  pivot_wider(names_from = Location,values_from = Points) |> 
+  group_by(Player) |>
+  mutate(mean_home = mean(Home, na.rm = TRUE),
+         mean_away = mean(Away, na.rm = TRUE))
+trailblazer_wider
+```
+
+```{r}
+trailblazer_wider |> group_by(Player) |>
+  group_by(Player) |>
+  mutate(mean_home = mean(Home, na.rm = TRUE),
+         mean_away = mean(Away, na.rm = TRUE)) |>
+  mutate(home_away_diff = mean_home - mean_away) |>
+  arrange(desc(home_away_diff))
+```
+
+On average, Jusuf Nurkic scored more points at home than away through the first 10 games of the season as shown with the highest `home_away_diff`.
+
+## Task 3
+
+### Part a
+
+-   \<NULL\> This is showing that there is not a value that exists for this variable.
+
+-   \<dbl \[52\]\> This is showing that this variable contain 52 different values.
+
+-   \<list\> This shows that the column contains lists as its values.
+
+### Part b
+
+```{r}
+colleague_penguins <- penguins |> select(species, island, bill_length_mm) |> 
+  group_by(species, island) |> 
+  summarise(n = n(), .groups = "drop") |> 
+  pivot_wider(names_from = island, values_from = n) |> 
+  mutate(across(.cols = -(1:1), .fns = ~replace_na(., replace = 0)))
+colleague_penguins
+```
+
+## Task 4
+
+```{r}
+penguins_na_rm <- penguins |> select(species, bill_length_mm) |>
+  mutate(bill_length_mm = replace(bill_length_mm, 
+                                  is.na(bill_length_mm) & species == "Adelie",
+                                  26),
+         bill_length_mm = replace(bill_length_mm, 
+                                  is.na(bill_length_mm) & species == "Gentoo",
+                                  30)) |> 
+  arrange(bill_length_mm)
+penguins_na_rm %>% slice_head(n = 10)
+```
+
